@@ -5,6 +5,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +41,35 @@ public class DivisionService {
                 .collect(Collectors.toList());
     }
 
+    // Buscar divisiones por nombre
+    public List<DivisionToViewListDto> findByNombre(String nombre) {
+        List<Division> divisiones = divisionRepository.findByNombreContainingIgnoreCase(nombre);
+        return divisiones.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    // Obtener todas las divisiones con paginación
+    public Page<DivisionToViewListDto> findAllPaginated(int page, int size, String sortBy) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        Page<Division> divisionesPage = divisionRepository.findAll(pageable);
+        return divisionesPage.map(this::convertToDto);
+    }
+
+    // Obtener divisiones activas con paginación
+    public Page<DivisionToViewListDto> findAllActivasPaginated(int page, int size, String sortBy) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        Page<Division> divisionesPage = divisionRepository.findByActivoTrue(pageable);
+        return divisionesPage.map(this::convertToDto);
+    }
+
+    // Buscar divisiones por nombre con paginación
+    public Page<DivisionToViewListDto> findByNombrePaginated(String nombre, int page, int size, String sortBy) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        Page<Division> divisionesPage = divisionRepository.findByNombreContainingIgnoreCase(nombre, pageable);
+        return divisionesPage.map(this::convertToDto);
+    }
+
     // Obtener división por ID
     public Optional<DivisionToViewListDto> findById(Long id) {
         Optional<Division> division = divisionRepository.findById(id);
@@ -46,6 +79,11 @@ public class DivisionService {
     // Crear nueva división
     @Transactional
     public DivisionToViewListDto create(DivisionCreateDto divisionDto) {
+        // Validar que el nombre no esté duplicado
+        if (divisionRepository.existsByNombreIgnoreCase(divisionDto.getNombre())) {
+            throw new IllegalArgumentException("Ya existe una división con el nombre: " + divisionDto.getNombre());
+        }
+
         Division division = new Division();
         division.setNombre(divisionDto.getNombre());
         division.setActivo(true);
@@ -71,9 +109,14 @@ public class DivisionService {
     @Transactional
     public Optional<DivisionToViewListDto> update(Long id, DivisionUpdateDto divisionDto) {
         Optional<Division> divisionOpt = divisionRepository.findById(id);
-        
+
         if (divisionOpt.isEmpty()) {
             return Optional.empty();
+        }
+
+        // Validar que el nombre no esté duplicado (excluyendo la división actual)
+        if (divisionRepository.existsByNombreIgnoreCaseAndIdNot(divisionDto.getNombre(), id)) {
+            throw new IllegalArgumentException("Ya existe una división con el nombre: " + divisionDto.getNombre());
         }
 
         Division division = divisionOpt.get();

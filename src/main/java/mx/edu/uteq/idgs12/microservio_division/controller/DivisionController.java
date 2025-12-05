@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -43,6 +45,44 @@ public class DivisionController {
     @GetMapping("/activas")
     public ResponseEntity<List<DivisionToViewListDto>> getDivisionesActivas() {
         List<DivisionToViewListDto> divisiones = divisionService.findAllActivas();
+        return ResponseEntity.ok(divisiones);
+    }
+
+    // Buscar divisiones por nombre
+    @GetMapping("/search")
+    public ResponseEntity<List<DivisionToViewListDto>> searchDivisionesByNombre(@RequestParam String nombre) {
+        List<DivisionToViewListDto> divisiones = divisionService.findByNombre(nombre);
+        return ResponseEntity.ok(divisiones);
+    }
+
+    // Obtener divisiones con paginación
+    @GetMapping("/paginated")
+    public ResponseEntity<Page<DivisionToViewListDto>> getAllDivisionesPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy) {
+        Page<DivisionToViewListDto> divisiones = divisionService.findAllPaginated(page, size, sortBy);
+        return ResponseEntity.ok(divisiones);
+    }
+
+    // Obtener divisiones activas con paginación
+    @GetMapping("/activas/paginated")
+    public ResponseEntity<Page<DivisionToViewListDto>> getDivisionesActivasPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy) {
+        Page<DivisionToViewListDto> divisiones = divisionService.findAllActivasPaginated(page, size, sortBy);
+        return ResponseEntity.ok(divisiones);
+    }
+
+    // Buscar divisiones por nombre con paginación
+    @GetMapping("/search/paginated")
+    public ResponseEntity<Page<DivisionToViewListDto>> searchDivisionesByNombrePaginated(
+            @RequestParam String nombre,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy) {
+        Page<DivisionToViewListDto> divisiones = divisionService.findByNombrePaginated(nombre, page, size, sortBy);
         return ResponseEntity.ok(divisiones);
     }
 
